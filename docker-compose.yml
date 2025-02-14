@@ -1,7 +1,6 @@
 services:
   zomboid:
-    #image: zomboid:latest
-    build: .
+    image: ghcr.io/f0rkz/docker-zomboid:latest
     restart: always
     environment:
       - ADMINPASSWORD=changeme
