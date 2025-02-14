@@ -1,0 +1,15 @@
+services:
+  zomboid:
+    #image: zomboid:latest
+    build: .
+    restart: always
+    environment:
+      - ADMINPASSWORD=changeme
+      - STEAMVAC=true
+      - SERVERNAME=zomboid
+    ports:
+      - "16261:16261/udp"
+      - "16262:16262/udp"
+    volumes:
+      - ./data:/data
+      - ./zomboid:/root/Zomboid
