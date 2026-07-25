@@ -1,0 +1,10 @@
+.git
+.github
+.gitignore
+AGENTS.md
+README.md
+SECURITY.md
+data
+server
+tests
+zomboid
