@@ -1,14 +1,23 @@
 services:
   zomboid:
     image: ghcr.io/f0rkz/docker-zomboid:latest
-    restart: always
+    restart: unless-stopped
+    init: true
     environment:
-      - ADMINPASSWORD=changeme
-      - STEAMVAC=true
-      - SERVERNAME=zomboid
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - SERVER_NAME=${SERVER_NAME:-zomboid}
+      - STEAM_VAC=${STEAM_VAC:-true}
+      - STEAM_BRANCH=${STEAM_BRANCH:-}
+      - SERVER_MEMORY=${SERVER_MEMORY:-8G}
+      - WORKSHOP_ITEMS
+      - MOD_IDS
+      - MAPS
     ports:
       - "16261:16261/udp"
       - "16262:16262/udp"
+    stop_grace_period: 2m
     volumes:
-      - ./data:/data
-      - ./zomboid:/root/Zomboid
+      - zomboid-data:/data
+
+volumes:
+  zomboid-data:

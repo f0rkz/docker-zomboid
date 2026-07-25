@@ -1,0 +1,58 @@
+name: Validate container image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 7 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Lint Dockerfile
+        run: >-
+          docker run --rm --interactive
+          hadolint/hadolint:v2.14.0-debian@sha256:158cd0184dcaa18bd8ec20b61f4c1cabdf8b32a592d062f57bdcb8e4c1d312e2
+          hadolint - < Dockerfile
+
+      - name: Test entrypoint
+        run: bash tests/entrypoint.sh
+
+      - name: Build image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          load: true
+          platforms: linux/amd64
+          tags: docker-zomboid:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Validate runtime contract
+        run: |
+          test "$(docker run --rm --entrypoint id docker-zomboid:test -u)" = "1000"
+          docker run --rm --entrypoint test docker-zomboid:test -w /data
+          docker run --rm --entrypoint bash docker-zomboid:test -n /usr/local/bin/zomboid-entrypoint
+
+      - name: Run Project Zomboid integration test
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          BUILD_IMAGE: "false"
+        run: bash tests/integration.sh
